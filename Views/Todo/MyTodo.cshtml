@@ -1,0 +1,239 @@
+﻿
+@{
+	ViewData["Title"] = "MyTodo";
+}
+
+<div class="mydiv" id="ToggApp">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="main-todo-input-wrap">
+				<div class="main-todo-input fl-wrap">
+					<div class="main-todo-input-item"> <input type="text" v-model="TodoName" placeholder="Bugün ne yapacaksın?"> </div> <button class="add-items main-search-button" v-on:click="AddTodo">Ekle</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr style="color:black;border-style:solid;border-width:1px;" />
+
+	<div class="row d-flex justify-content-center container">
+		<div class="col-md-8">
+			<div class="card-hover-shadow-2x mb-3 card" v-if="!BtnToggle">
+				<div class="card-header-tab card-header">
+
+					<div class="col-10">
+						<div class="card-header-title font-size-lg text-capitalize font-weight-normal"><i class="fa fa-tasks"></i>&nbsp;Tüm yapılacaklar</div>
+					</div>
+					<div class="col-4">
+						<div class="dropdown">
+							<button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								Sırala
+							</button>
+							<div class="dropdown-menu" aria-labelledby="dropdownMenu2">
+
+								<button class="dropdown-item" type="button" v-on:click="Afilter">A-Z Sırala</button>
+								<button class="dropdown-item" type="button" v-on:click="ZFilter">Z-A Sırala</button>
+								<button class="dropdown-item" type="button" v-on:click="Comp">Tamamlandı</button>
+								<button class="dropdown-item" type="button" v-on:click="List">Sıfırla</button>
+							
+
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="text-center" v-if="!todoResult.length">
+					<div class="cardd">
+						<div class="card__image loading"></div>
+
+					</div>
+				</div>
+
+
+				<div class="scroll-area-sm" v-else="todoResult">
+
+					<div style="position: static;" class="ps ps--active-y">
+						<div class="ps-content">
+							<ul class=" list-group list-group-flush">
+								<li class="list-group-item"  v-for="(todoResult,index) in todoResult">
+									<div class="todo-indicator bg-warning"></div>
+									<div class="widget-content p-0">
+										<div class="widget-content-wrapper">
+
+											<div>
+												<div  class="col-10" v-if="todoResult.done == true">
+													<span class="badge badge-success">tamalandı</span>
+												</div>
+												<div class="widget-content-left mr-2" v-else="todoResult.done">
+													<div class="custom-checkbox custom-control">
+														<input class="form-check-input" type="checkbox"  v-on:click="Chancge(todoResult,index)" v-model="donebox">
+													</div>
+												</div>
+											</div>
+											
+										
+											<div class="widget-content-left">
+												<div class="widget-subheading"><h5>{{todoResult.todoName}}</h5></div>
+											</div>
+											<div class="widget-content-right">
+												@*<button data-toggle="modal" data-target="#exampleModal" class="border-0 btn-transition btn btn-outline-success" > <i class="fa fa-check"></i></button>*@
+												<button class="border-0 btn-transition btn btn-outline-danger" v-on:click="RemoveTodo(todoResult,index)"> <i class="fa fa-trash"></i> </button>
+											</div>
+
+										</div>
+
+									</div>
+
+								</li>
+
+
+							</ul>
+
+						</div>
+
+					</div>
+
+				</div>
+				
+
+				<br />
+				<br />
+			</div>
+
+			<div class="text-center">
+				<button class="btn" type="button" v-on:click="BtnToggle = ! BtnToggle">	<i style='font-size:34px;color:orangered' class='fas'>&#xf106;</i> 	<i style='font-size:34px;color:black' class='fas'>&#xf107;</i></button>
+			</div>
+
+
+		</div>
+
+	</div>
+	
+
+</div>
+
+
+
+
+<script>
+	App = new Vue({
+		el: "#ToggApp",
+		data: {
+			BtnToggle: false,
+			todoResult: [],
+			TodoName: "",
+			donebox: false,
+		},
+
+		methods: {
+
+			Chancge: function (data) {
+				var vm = this;
+				var update = {
+					id: data.id,
+					donebox: data.donebox = true,
+				}
+				$.ajax({
+					url: "/todo/update",
+					method: "PUT",
+					data: update,
+				})
+					.done(function (data) {
+						vm.todoResult.splice(0, 0, data);
+					})	
+			},
+
+			AddTodo: function () {
+
+				var vm = this;
+				if (vm.TodoName == "") {
+					return;
+				}
+				var newTodo = {
+					todoname: vm.TodoName
+					
+				}
+				$.ajax({ url: "/todo/createtodo", data: newTodo, method: "POST" })
+					.done(function (data) {
+						vm.todoResult.splice(0, 0, data);
+					})
+				this.TodoName = "";
+			},
+
+			List: function () {
+				var vm = this;
+				$.ajax({
+					url: "/todo/ListTodo",
+					method: "GET",
+				})
+					.done(function (data) {
+						vm.todoResult = data;
+
+					})
+			},
+
+			RemoveTodo: function (data) {
+				var vm = this;
+				var remove = {
+					id: data.id,
+				}
+
+				$.ajax({ url: "/todo/delete", data: remove, method: "DELETE" })
+					.done(function (data) {
+						vm.todoResult.splice(data, 1);
+
+					});
+
+
+			},
+
+			Afilter() {
+				var vm = this;
+				$.ajax({
+					url: "/todo/a",
+					method: "GET",
+				})
+					.done(function (data) {
+
+						vm.todoResult = data;
+
+					})
+			},
+
+			ZFilter() {
+
+				var vm = this;
+				$.ajax({
+					url: "/todo/z",
+					method: "GET",
+				})
+					.done(function (data) {
+						vm.todoResult = data;
+					})
+			},
+
+			Comp() {
+
+				var vm = this;
+				$.ajax({
+					url: "/todo/CompList",
+					method: "GET",
+				})
+					.done(function (data) {
+						vm.todoResult = data;
+					})
+			},
+
+		},
+
+		created: function () {
+			setTimeout(() => {
+				this.List();
+			}, 1500);
+
+
+		},
+
+
+	});
+</script>
